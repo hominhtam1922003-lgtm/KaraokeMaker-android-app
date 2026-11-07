@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Đầu trang Studio -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_btn_dark"
+            android:text="←"
+            android:textColor="@color/text_main"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                style="@style/KmTextTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Tên bài"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/tvSub"
+                style="@style/KmTextSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/chipSaved"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip_green"
+            android:paddingStart="10dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:text="✓ Đã lưu"
+            android:textColor="@color/ok_green"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnToExport"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_gradient_btn"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="Xuất video →"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Xem trước trực tiếp -->
+    <com.example.karaokemaker.ui.KaraokePreviewView
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
+        android:layout_height="190dp"
+        android:layout_marginTop="10dp" />
+
+    <!-- Thanh phát + gắn nhịp -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPlay"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_circle_grad"
+                android:text="▶"
+                android:textColor="@color/white"
+                android:textSize="20sp" />
+
+            <Button
+                android:id="@+id/btnBack5"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_btn_dark"
+                android:text="−5s"
+                android:textColor="@color/text_main" />
+
+            <Button
+                android:id="@+id/btnFwd5"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_btn_dark"
+                android:text="+5s"
+                android:textColor="@color/text_main" />
+
+            <TextView
+                android:id="@+id/tvTime"
+                style="@style/KmTextSub"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="0:00 / 0:00" />
+
+            <Button
+                android:id="@+id/btnTap"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_gradient_btn"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="⏺ GẮN NHỊP"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Switch
+                android:id="@+id/swTapMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chế độ gắn nhịp"
+                android:textColor="@color/text_main" />
+
+            <TextView
+                android:id="@+id/tvTapInfo"
+                style="@style/KmTextSub"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="Đã gắn 0/0 câu" />
+        </LinearLayout>
+
+        <com.example.karaokemaker.ui.WaveformView
+            android:id="@+id/waveform"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="6dp" />
+    </LinearLayout>
+
+    <!-- Chuyển tab: Dòng lời | Phong cách -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnTabLines"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_btn_selected"
+            android:text="Dòng lời"
+            android:textColor="@color/text_main"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnTabStyle"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_btn_dark"
+            android:text="Phong cách"
+            android:textColor="@color/text_main"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1">
+
+        <!-- TAB DÒNG LỜI -->
+        <LinearLayout
+            android:id="@+id/layoutLines"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/cardJob"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvJobLabel"
+                        style="@style/KmTextBody"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Đang xử lý..." />
+
+                    <Button
+                        android:id="@+id/btnJobCancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_btn_dark"
+                        android:text="Huỷ"
+                        android:textColor="@color/error_red"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/pbJob"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="6dp"
+                    android:max="100"
+                    android:progressDrawable="@drawable/progress_gradient" />
+
+                <TextView
+                    android:id="@+id/tvJobError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/error_red"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnSeparateFast"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_btn_dark"
+                    android:text="Tách beat nhanh"
+                    android:textColor="@color/text_main"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnSeparateAi"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_btn_dark"
+                    android:text="Tách beat AI"
+                    android:textColor="@color/text_main"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnTranscribe"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_btn_dark"
+                    android:text="🤖 Chép lời AI"
+                    android:textColor="@color/text_main"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnPasteLyrics"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_btn_dark"
+                    android:text="📋 Dán lời / .lrc"
+                    android:textColor="@color/text_main"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvLineStats"
+                style="@style/KmTextSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Chưa có dòng lời nào" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvLines"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="6dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- TAB PHONG CÁCH -->
+        <ScrollView
+            android:id="@+id/panelStyle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="2dp">
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MẪU CHỮ CÓ SẴN" />
+
+                <Spinner
+                    android:id="@+id/spPreset"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_input" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="FONT CHỮ" />
+
+                <Spinner
+                    android:id="@+id/spFont"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_input" />
+
+                <TextView
+                    android:id="@+id/tvSizeVal"
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="CỠ CHỮ: 64" />
+
+                <SeekBar
+                    android:id="@+id/sbSize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:max="66"
+                    android:progress="20" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="MÀU ĐÃ HÁT" />
+
+                <LinearLayout
+                    android:id="@+id/llSungColors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="MÀU CHƯA HÁT" />
+
+                <LinearLayout
+                    android:id="@+id/llBaseColors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="HIỆU ỨNG CHẠY CHỮ" />
+
+                <Spinner
+                    android:id="@+id/spEffect"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_input" />
+
+                <Switch
+                    android:id="@+id/swTwoLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Hiện câu kế tiếp ở dưới"
+                    android:textColor="@color/text_main" />
+
+                <Switch
+                    android:id="@+id/swFade"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Chữ mờ dần khi vào / hết câu"
+                    android:textColor="@color/text_main" />
+
+                <Switch
+                    android:id="@+id/swCountdown"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Chấm đếm ngược trước câu hát"
+                    android:textColor="@color/text_main" />
+
+                <Switch
+                    android:id="@+id/swProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Thanh tiến trình trên video"
+                    android:textColor="@color/text_main" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="SONG CA" />
+
+                <Switch
+                    android:id="@+id/swDuet"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Bật song ca (2 màu xen kẽ theo câu)"
+                    android:textColor="@color/text_main" />
+
+                <LinearLayout
+                    android:id="@+id/llDuetRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        style="@style/KmTextSub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Màu người hát 2 (Nam)" />
+
+                    <LinearLayout
+                        android:id="@+id/llDuetColors"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="NỀN VIDEO" />
+
+                <Spinner
+                    android:id="@+id/spBgType"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_input" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/llGradients"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnPickBgImage"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_dark"
+                        android:text="Chọn ảnh nền"
+                        android:textColor="@color/text_main"
+                        android:textSize="13sp" />
+
+                    <Button
+                        android:id="@+id/btnPickBgVideo"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_dark"
+                        android:text="Chọn video nền"
+                        android:textColor="@color/text_main"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvGuideVal"
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="GIỌNG DẪN: 0%" />
+
+                <SeekBar
+                    android:id="@+id/sbGuide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:max="40"
+                    android:progress="0" />
+
+                <TextView
+                    style="@style/KmTextSection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="KHUNG HÌNH" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnR169"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_selected"
+                        android:text="16:9 Ngang"
+                        android:textColor="@color/text_main"
+                        android:textSize="13sp" />
+
+                    <Button
+                        android:id="@+id/btnR916"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_dark"
+                        android:text="9:16 Dọc"
+                        android:textColor="@color/text_main"
+                        android:textSize="13sp" />
+
+                    <Button
+                        android:id="@+id/btnR11"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_dark"
+                        android:text="1:1 Vuông"
+                        android:textColor="@color/text_main"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/KmTextSub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Mọi thay đổi phong cách tự lưu và hiện ngay ở khung xem trước phía trên." />
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</LinearLayout>

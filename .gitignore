@@ -1,0 +1,13 @@
+*.iml
+.gradle/
+/local.properties
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+# AAR sherpa-onnx tải từ GitHub Releases (38 MB) — CI tự tải trước khi build, xem BUILD-NOTES.md
+/app/libs/*.aar
+keystore.properties
+*.jks
+*.keystore

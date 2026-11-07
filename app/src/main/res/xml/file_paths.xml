@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Video thành phẩm trong thư mục dự án (để chia sẻ trước khi lưu vào Movies) -->
+    <files-path name="project_files" path="projects/" />
+    <cache-path name="cache" path="." />
+    <external-files-path name="ext_files" path="." />
+</paths>

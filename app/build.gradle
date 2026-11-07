@@ -1,0 +1,95 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+// Ký release: CI truyền keystore qua biến môi trường (xem docs/WORKFLOW-build-android.yml).
+// Không có biến môi trường (build tay trên máy dev) -> dùng debug signing để vẫn ra APK cài thử.
+def ksFile = System.getenv("KEYSTORE_FILE")
+def releaseSigning = ksFile != null && new File(ksFile).exists()
+
+android {
+    namespace 'com.example.karaokemaker'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.karaokemaker"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+        // App chỉ ship arm64-v8a: cắt ABI thừa của mọi AAR (ffmpeg/onnxruntime/youtubedl).
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    signingConfigs {
+        if (releaseSigning) {
+            release {
+                storeFile file(ksFile)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // v1 ưu tiên ỔN ĐỊNH: không minify, không shrink — tránh lỗi runtime khó lường.
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (releaseSigning) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    packaging {
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+        // youtubedl-android đóng Python dạng .so nén — giữ nguyên cách đóng gói của thư viện.
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+
+    // 1) FFmpeg: fork maintained, GHIM ĐÚNG 8.1.9 (<=8.1.8 hỏng drawtext; bản full có libass,
+    //    LGPL nên không có x264 -> encode bằng h264_mediacodec). Soi AAR: BUILD-NOTES.md.
+    implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.9'
+
+    // 2) YouTube: CHỈ :library — KHÔNG lấy :ffmpeg (không cần vì tải audio-only 1 luồng
+    //    không gộp/không hậu xử lý; artifact đó còn lỗi align 16KB) và KHÔNG lấy :aria2c.
+    implementation 'io.github.junkfood02.youtubedl-android:library:0.18.1'
+
+    // 3) Chép lời: sherpa-onnx v2.0.1 bản STATIC-link ONNX Runtime (bản thường chứa
+    //    libonnxruntime.so riêng -> đụng với onnxruntime-android ở mục 4).
+    //    AAR tải từ GitHub Releases, đặt ở app/libs/ — CI tự tải trước khi build (BUILD-NOTES.md).
+    implementation files('libs/sherpa-onnx-static-link-onnxruntime-2.0.1.aar')
+
+    // 4) Tách beat MDX-Net: ONNX Runtime chính chủ.
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.31.1'
+}

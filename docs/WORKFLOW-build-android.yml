@@ -1,0 +1,94 @@
+# ============================================================================
+# BẢN MẪU workflow build Android cho Karaoke Maker.
+# File này nằm trong docs/ CHỈ ĐỂ THAM KHẢO — Tổng 98 sẽ tạo workflow THẬT
+# tại .github/workflows/build-android.yml bằng web editor của GitHub
+# (connector không được phép ghi .github/workflows/*).
+# Nội dung hai nơi phải GIỐNG HỆT nhau.
+# ============================================================================
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag release (để trống = chỉ build artifact, không tạo Release)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle.properties"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      # sherpa-onnx không có trên Maven Central: tải AAR bản static-link từ
+      # GitHub Releases vào app/libs/ (repo đã .gitignore file .aar).
+      - name: Download sherpa-onnx AAR (static-link, v2.0.1)
+        run: |
+          mkdir -p app/libs
+          curl -fL --retry 3 -o app/libs/sherpa-onnx-static-link-onnxruntime-2.0.1.aar \
+            https://github.com/k2-fsa/sherpa-onnx/releases/download/v2.0.1/sherpa-onnx-static-link-onnxruntime-2.0.1.aar
+          ls -l app/libs/
+          test "$(stat -c%s app/libs/sherpa-onnx-static-link-onnxruntime-2.0.1.aar)" = "38577050"
+
+      # Keystore từ secrets; thiếu secret -> build.gradle tự lùi về debug
+      # signing (vẫn ra APK nhưng KHÔNG cài đè được các bản ký release).
+      - name: Prepare keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Thiếu secret KEYSTORE_B64 — APK sẽ ký bằng debug key"
+          fi
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Collect APK
+        run: |
+          ls -lh app/build/outputs/apk/release/
+          cp app/build/outputs/apk/release/app-release.apk KaraokeMaker.apk
+          sha256sum KaraokeMaker.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KaraokeMaker-apk
+          path: KaraokeMaker.apk
+
+      - name: Create GitHub Release
+        if: ${{ inputs.release_tag != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: Karaoke Maker Android ${{ inputs.release_tag }}
+          files: KaraokeMaker.apk

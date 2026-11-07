@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bảng màu theo khung thiết kế KaraStudio: nền tối gần đen, thẻ tối bo góc,
+     điểm nhấn gradient hồng -> tím, chip trạng thái xanh/cam/xám. -->
+<resources>
+    <color name="bg_main">#0B0B13</color>
+    <color name="bg_card">#15151F</color>
+    <color name="bg_card_2">#1B1B29</color>
+    <color name="bg_input">#1E1E2C</color>
+    <color name="stroke_card">#262638</color>
+    <color name="text_main">#F5F5FA</color>
+    <color name="text_sub">#9C9CB2</color>
+    <color name="text_faint">#62627A</color>
+    <color name="accent_pink">#FF4E8A</color>
+    <color name="accent_purple">#A55BFF</color>
+    <color name="grad_start">#FF4E8A</color>
+    <color name="grad_end">#A55BFF</color>
+    <color name="ok_green">#34D399</color>
+    <color name="ok_green_bg">#14352A</color>
+    <color name="warn_orange">#FFB020</color>
+    <color name="warn_orange_bg">#3A2C10</color>
+    <color name="idle_gray">#8A8AA0</color>
+    <color name="idle_gray_bg">#262633</color>
+    <color name="error_red">#FF5C5C</color>
+    <color name="sung_default">#FFD400</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

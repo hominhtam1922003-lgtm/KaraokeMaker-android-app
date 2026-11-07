@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- FGS loại mediaProcessing (API 35): loại đúng cho tác vụ xử lý media dài
+         4-25 phút; tránh dataSync vì Android 15 giới hạn 6 giờ/ngày. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Đọc bài hát trong máy (Thư viện): API 33+ dùng READ_MEDIA_AUDIO -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Chỉ cần cho API 26-28 khi lưu video ra Movies công khai; API 29+ dùng MediaStore không cần quyền -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:name=".KaraokeApp"
+        android:allowBackup="false"
+        android:extractNativeLibs="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.KaraokeMaker"
+        tools:targetApi="35">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.AddSongActivity"
+            android:exported="false"
+            android:label="Thêm bài" />
+
+        <activity
+            android:name=".ui.StudioActivity"
+            android:exported="false"
+            android:label="Studio" />
+
+        <activity
+            android:name=".ui.ExportActivity"
+            android:exported="false"
+            android:label="Xuất video" />
+
+        <!-- Dịch vụ chạy mọi tác vụ dài: tải / tách beat / chép lời / xuất video.
+             android:stopWithTask="false" để đóng giao diện app vẫn chạy tiếp. -->
+        <service
+            android:name=".service.JobService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProcessing"
+            android:stopWithTask="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

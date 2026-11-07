@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_btn_dark"
+                android:text="←"
+                android:textColor="@color/text_main"
+                android:textSize="18sp" />
+
+            <TextView
+                style="@style/KmTextTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Thêm bài hát" />
+        </LinearLayout>
+
+        <!-- Nguồn 1: link YouTube -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                style="@style/KmTextSection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DÁN LINK YOUTUBE" />
+
+            <EditText
+                android:id="@+id/etUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_input"
+                android:hint="https://www.youtube.com/watch?v=..."
+                android:inputType="textUri"
+                android:padding="12dp"
+                android:textColor="@color/text_main"
+                android:textColorHint="@color/text_faint" />
+
+            <Button
+                android:id="@+id/btnFromLink"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_gradient_btn"
+                android:text="Tự làm từ link này"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Nguồn 2: file trong máy -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                style="@style/KmTextSection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HOẶC CHỌN FILE TRONG MÁY" />
+
+            <Button
+                android:id="@+id/btnPickFile"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_btn_dark"
+                android:text="📁 Chọn file nhạc / video"
+                android:textColor="@color/text_main" />
+        </LinearLayout>
+
+        <!-- Tuỳ chọn chạy tự hành -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                style="@style/KmTextSection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CÁCH TÁCH BEAT" />
+
+            <RadioGroup
+                android:id="@+id/rgSep"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp">
+
+                <RadioButton
+                    android:id="@+id/rbFast"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:padding="6dp"
+                    android:text="Nhanh — cắt stereo (xong ngay, beat có thể còn vọng giọng)"
+                    android:textColor="@color/text_main" />
+
+                <RadioButton
+                    android:id="@+id/rbAi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp"
+                    android:text="AI — tách bằng model MDX (beat sạch; bài 4 phút có thể mất 8–16 phút, cần tải model trước)"
+                    android:textColor="@color/text_main" />
+            </RadioGroup>
+
+            <CheckBox
+                android:id="@+id/cbAutoRender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:padding="6dp"
+                android:text="Tự xuất video luôn khi chép lời xong (vào Studio chỉnh sau cũng được)"
+                android:textColor="@color/text_main" />
+
+            <TextView
+                style="@style/KmTextSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Mọi việc chạy ở nền: đóng app vẫn chạy tiếp, mở lại thấy tiến độ. Chép lời cần model Whisper — nếu chưa tải, vào Thư viện tải trước." />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

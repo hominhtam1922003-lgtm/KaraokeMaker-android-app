@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.KaraokeMaker" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/accent_pink</item>
+        <item name="colorPrimaryVariant">@color/accent_purple</item>
+        <item name="colorSecondary">@color/accent_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:windowBackground">@color/bg_main</item>
+        <item name="android:statusBarColor">@color/bg_main</item>
+        <item name="android:navigationBarColor">@color/bg_main</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
+
+    <style name="KmTextTitle" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="KmTextSection" parent="TextAppearance.MaterialComponents.Overline">
+        <item name="android:textColor">@color/text_sub</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="KmTextBody">
+        <item name="android:textColor">@color/text_main</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="KmTextSub">
+        <item name="android:textColor">@color/text_sub</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+</resources>
