@@ -9,8 +9,12 @@ import java.security.MessageDigest
 
 /**
  * Tải model AI lần đầu vào filesDir/models (KHÔNG nhét vào APK):
- *  - MDX tách beat: UVR-MDX-NET-Inst_HQ_3.onnx từ TRvlvr/model_repo —
- *    BẮT BUỘC đối chiếu sha256 sau khi tải (chuẩn đã chốt ở file deps).
+ *  - MDX tách beat: Kim_Vocal_2.onnx từ TRvlvr/model_repo (v1.1.0 — thay
+ *    UVR-MDX-NET-Inst_HQ_3: SDR vocal đo được 10,18 so với 9,38, cùng
+ *    66.759.214 byte, cùng hợp đồng tensor [batch,4,3072,256]; KHÁC ở
+ *    chiều stem: Kim dự đoán THẲNG GIỌNG nên instrumental = gốc − giọng,
+ *    xem [ModelFile.predictsVocal] + Mdx.splitStem) — BẮT BUỘC đối chiếu
+ *    sha256 sau khi tải (chuẩn đã chốt ở file deps).
  *  - Whisper small: bản export CÓ attention (clairemcw) — bản small chuẩn
  *    không có attention output thì timestamp từng từ sẽ rỗng. Đối chiếu
  *    dung lượng từng file (repo cộng đồng không công bố sha256).
@@ -19,7 +23,7 @@ import java.security.MessageDigest
  */
 object ModelManager {
 
-    const val MDX_NAME = "UVR-MDX-NET-Inst_HQ_3.onnx"
+    const val MDX_NAME = "Kim_Vocal_2.onnx"
     const val WHISPER_ENCODER = "small-encoder.int8.onnx"
     const val WHISPER_DECODER = "small-decoder.int8.onnx"
     const val WHISPER_TOKENS = "small-tokens.txt"
@@ -28,14 +32,27 @@ object ModelManager {
         val name: String,
         val url: String,
         val expectedSize: Long,
-        val sha256: String? = null
+        val sha256: String? = null,
+        /**
+         * Chỉ dùng cho model MDX: true = model dự đoán stem GIỌNG
+         * (Kim Vocal 2), false = dự đoán stem NHẠC NỀN (Inst_HQ cũ).
+         * Quyết định chiều trừ stem trong Mdx.separate.
+         */
+        val predictsVocal: Boolean = false
     )
 
+    // Kim Vocal 2 — xác minh THẬT ngày 07/11/2026 trước khi nối (v1.1.0):
+    // tải file từ URL dưới về đo tại chỗ: đúng 66.759.214 byte, sha256 như
+    // dưới; đọc graph bằng ONNX Runtime: input "input" [batch,4,3072,256]
+    // float32 -> output "output" cùng shape (khớp hệt cách Mdx.kt chạy:
+    // 4 kênh "A", DIM_F 3072, DIM_T 256); chạy thử 1 lượt suy luận cho ra
+    // số hữu hạn. KHÔNG đoán số — sai 1 ký tự sha là app tự xoá + báo lỗi.
     val MDX = ModelFile(
         name = MDX_NAME,
-        url = "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_3.onnx",
+        url = "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/Kim_Vocal_2.onnx",
         expectedSize = 66_759_214L,
-        sha256 = "317554b07fe1ea5279a77f2b1520a41ea4b93432560c4ffd08792c30fddf9adc"
+        sha256 = "ce74ef3b6a6024ce44211a07be9cf8bc6d87728cc852a68ab34eb8e58cde9c8b",
+        predictsVocal = true
     )
 
     private const val WHISPER_BASE =

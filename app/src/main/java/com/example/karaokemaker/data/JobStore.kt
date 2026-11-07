@@ -27,6 +27,15 @@ data class Job(
     var error: String? = null,
     /** JSON phụ: separate -> {"mode":"fast|ai"}; pipeline -> {"sepMode":"fast|ai","autoRender":true} */
     var payload: String = "{}",
+    /** Đợt hàng loạt (v1.1.0): các job cùng 1 mẻ dùng chung 1 batchId; job lẻ = null. */
+    var batchId: String? = null,
+    /**
+     * Mốc thời gian báo cáo tiến độ GẦN NHẤT (epoch ms) — đồng hồ canh
+     * chặng (Watchdog) đọc số này: job "running" mà quá 10 phút không có
+     * báo cáo nào thì coi là treo im lặng. Cập nhật ở mọi lần progress()
+     * (trong RAM luôn mới; ghi đĩa theo nhịp tiết lưu sẵn có).
+     */
+    var lastProgressAt: Long = 0L,
     var createdAt: Long = System.currentTimeMillis(),
     var updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -77,6 +86,10 @@ object JobStore {
                     label = o.optString("label", ""),
                     error = if (o.isNull("error")) null else o.optString("error"),
                     payload = o.optString("payload", "{}"),
+                    // Sổ cũ (<= v1.0.1) không có 2 key này -> optString/optLong
+                    // trả rỗng/updatedAt là tương thích ngược an toàn.
+                    batchId = o.optString("batchId", "").ifEmpty { null },
+                    lastProgressAt = o.optLong("lastProgressAt", o.optLong("updatedAt", 0)),
                     createdAt = o.optLong("createdAt", 0),
                     updatedAt = o.optLong("updatedAt", 0)
                 )
@@ -96,6 +109,8 @@ object JobStore {
             o.put("status", j.status); o.put("progress", j.progress)
             o.put("label", j.label); o.put("error", j.error ?: JSONObject.NULL)
             o.put("payload", j.payload)
+            o.put("batchId", j.batchId ?: JSONObject.NULL)
+            o.put("lastProgressAt", j.lastProgressAt)
             o.put("createdAt", j.createdAt); o.put("updatedAt", j.updatedAt)
             arr.put(o)
         }
@@ -114,10 +129,16 @@ object JobStore {
     }
 
     @Synchronized
-    fun enqueue(projectId: String, type: String, payload: String = "{}"): Job {
+    fun enqueue(
+        projectId: String,
+        type: String,
+        payload: String = "{}",
+        batchId: String? = null
+    ): Job {
         val j = Job(
             id = UUID.randomUUID().toString().take(12),
-            projectId = projectId, type = type, payload = payload
+            projectId = projectId, type = type, payload = payload,
+            batchId = batchId
         )
         jobs[j.id] = j
         persist()
@@ -164,6 +185,9 @@ object JobStore {
         j.progress = newPct
         if (label.isNotEmpty()) j.label = label
         val now = System.currentTimeMillis()
+        // Đồng hồ canh chặng đọc mốc này — cập nhật MỌI lần gọi, kể cả khi
+        // tiết lưu chưa ghi đĩa (số trong RAM là số service nhìn thấy).
+        j.lastProgressAt = now
         val shouldPersist = labelChanged || newPct >= 100.0 ||
             kotlin.math.abs(newPct - lastPersistedPct(j)) >= 1.0 ||
             now - lastProgressPersist >= 1000

@@ -16,8 +16,9 @@ import com.example.karaokemaker.R
 import com.example.karaokemaker.data.Job
 import com.example.karaokemaker.data.JobStore
 import com.example.karaokemaker.data.ProjectStore
+import com.example.karaokemaker.data.Watchdog
 import com.example.karaokemaker.ui.MainActivity
-import java.util.concurrent.Executors
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -31,14 +32,34 @@ import java.util.concurrent.atomic.AtomicBoolean
  *    chặng đã có file đầu ra).
  *  - Lỗi bất kỳ -> job "error" + thông báo lỗi rõ ràng, service vẫn sống và
  *    chạy job kế tiếp.
+ *  - ĐỒNG HỒ CANH CHẶNG (v1.1.0, logic ở [Watchdog]): thread riêng kiểm
+ *    tra mỗi 30 giây — job "running" mà 10 phút không có báo cáo tiến độ
+ *    nào = treo im lặng -> cắt job với lỗi rõ ràng, hàng đợi chạy bài kế.
  * Loại FGS: mediaProcessing (khai trong Manifest) — đúng cho tác vụ media
  * dài trên Android 15; startForeground dùng dạng 2 tham số để hệ thống lấy
  * loại từ Manifest, tránh lệch type giữa các đời Android.
  */
 class JobService : Service() {
 
-    private val executor = Executors.newSingleThreadExecutor()
     private val pumping = AtomicBoolean(false)
+
+    /**
+     * "Thế hệ" của vòng bơm: watchdog cắt 1 job treo sẽ tăng thế hệ này để
+     * vô hiệu vòng lặp cũ (thread cũ nếu có tỉnh lại cũng tự rút lui, không
+     * ghi đè trạng thái, không tắt service của vòng mới).
+     */
+    @Volatile
+    private var pumpGen = 0
+
+    /** Job đã bị watchdog tuyên bố bỏ — runOne của thread cũ không được ghi đè trạng thái nữa. */
+    private val abandonedJobs = ConcurrentHashMap.newKeySet<String>()
+
+    @Volatile
+    private var workerThread: Thread? = null
+
+    @Volatile
+    private var watchdogThread: Thread? = null
+
     @Volatile
     private var currentJobId: String? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -54,6 +75,7 @@ class JobService : Service() {
         JobStore.sweepInterruptedOnServiceStart()
         createChannel()
         JobStore.addListener { onStoreChanged() }
+        startWatchdog()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,7 +91,9 @@ class JobService : Service() {
             wakeLock?.release()
         } catch (e: Exception) {
         }
-        executor.shutdownNow()
+        pumpGen++
+        watchdogThread?.interrupt()
+        workerThread?.interrupt()
         super.onDestroy()
     }
 
@@ -77,18 +101,26 @@ class JobService : Service() {
 
     private fun pump() {
         if (!pumping.compareAndSet(false, true)) return
-        executor.execute {
+        val gen = pumpGen
+        val t = Thread {
             try {
-                while (true) {
+                while (gen == pumpGen) {
                     val job = JobStore.nextQueued() ?: break
                     runOne(job)
                 }
             } finally {
-                pumping.set(false)
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                // Chỉ vòng bơm thuộc thế hệ hiện tại mới được tắt service;
+                // vòng cũ bị watchdog thay thế phải rút lui trong im lặng.
+                if (gen == pumpGen) {
+                    pumping.set(false)
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
             }
         }
+        t.isDaemon = true
+        workerThread = t
+        t.start()
     }
 
     private fun runOne(job: Job) {
@@ -96,12 +128,15 @@ class JobService : Service() {
         JobStore.update(job.id) {
             it.status = "running"
             it.error = null
+            // Mốc tiến độ đầu tiên của lượt chạy: watchdog tính giờ từ đây.
+            it.lastProgressAt = System.currentTimeMillis()
             if (it.label.isEmpty()) it.label = "đang bắt đầu"
         }
         acquireWakeLock()
         showProgressNotification(job.id)
         try {
             Pipeline.runJob(applicationContext, job)
+            if (abandonedJobs.contains(job.id)) return // watchdog đã xử lý
             val now = JobStore.get(job.id)
             if (now?.status == "canceled") {
                 // giữ nguyên trạng thái huỷ do người dùng đặt
@@ -114,11 +149,13 @@ class JobService : Service() {
                 notifyFinished(job, error = null)
             }
         } catch (e: Pipeline.Cancelled) {
+            if (abandonedJobs.contains(job.id)) return
             JobStore.update(job.id) {
                 it.status = "canceled"
                 it.label = "đã huỷ"
             }
         } catch (e: Exception) {
+            if (abandonedJobs.contains(job.id)) return
             val msg = e.message ?: e.javaClass.simpleName
             JobStore.update(job.id) {
                 if (it.status != "canceled") {
@@ -129,8 +166,63 @@ class JobService : Service() {
             }
             if (JobStore.get(job.id)?.status == "error") notifyFinished(job, error = msg)
         } finally {
-            currentJobId = null
+            if (currentJobId == job.id) currentJobId = null
         }
+    }
+
+    // ---------------- đồng hồ canh chặng ----------------
+
+    private fun startWatchdog() {
+        val t = Thread {
+            while (!Thread.currentThread().isInterrupted) {
+                try {
+                    Thread.sleep(WATCHDOG_TICK_MS)
+                } catch (e: InterruptedException) {
+                    break
+                }
+                try {
+                    checkWatchdog()
+                } catch (e: Exception) {
+                    // watchdog tự lỗi thì bỏ qua nhịp này — tuyệt đối không
+                    // để thread canh chết theo, cũng không kéo sập service
+                }
+            }
+        }
+        t.isDaemon = true
+        t.name = "km-watchdog"
+        watchdogThread = t
+        t.start()
+    }
+
+    private fun checkWatchdog() {
+        val id = currentJobId ?: return
+        val job = JobStore.get(id) ?: return
+        if (!Watchdog.isStalled(job, System.currentTimeMillis())) return
+        tripWatchdog(job)
+    }
+
+    /**
+     * Cắt 1 job treo: chốt lỗi vào sổ + báo user, huỷ phiên ffmpeg nếu
+     * đang chạy, ngắt thread worker, rồi khởi động vòng bơm MỚI để hàng
+     * đợi (kể cả đợt hàng loạt) chạy bài kế tiếp ngay.
+     */
+    private fun tripWatchdog(job: Job) {
+        abandonedJobs.add(job.id)
+        val msg = Watchdog.stallError(job)
+        JobStore.update(job.id) {
+            if (it.status == "running") {
+                it.status = "error"
+                it.error = msg
+                it.label = "lỗi"
+            }
+        }
+        if (JobStore.get(job.id)?.status == "error") notifyFinished(job, error = msg)
+        com.example.karaokemaker.audio.Ffmpeg.cancelCurrent()
+        pumpGen++
+        workerThread?.interrupt()
+        if (currentJobId == job.id) currentJobId = null
+        pumping.set(false)
+        pump()
     }
 
     private fun cancelJob(jobId: String) {
@@ -253,9 +345,18 @@ class JobService : Service() {
         const val ACTION_CANCEL = "com.example.karaokemaker.CANCEL_JOB"
         const val EXTRA_JOB_ID = "job_id"
 
-        /** Tạo job mới + đánh thức service. Trả về job đã tạo. */
-        fun enqueue(context: Context, projectId: String, type: String, payload: String = "{}"): Job {
-            val job = JobStore.enqueue(projectId, type, payload)
+        /** Nhịp kiểm tra của đồng hồ canh chặng. */
+        private const val WATCHDOG_TICK_MS = 30_000L
+
+        /** Tạo job mới + đánh thức service. [batchId] != null = job thuộc 1 đợt hàng loạt. */
+        fun enqueue(
+            context: Context,
+            projectId: String,
+            type: String,
+            payload: String = "{}",
+            batchId: String? = null
+        ): Job {
+            val job = JobStore.enqueue(projectId, type, payload, batchId)
             start(context)
             return job
         }

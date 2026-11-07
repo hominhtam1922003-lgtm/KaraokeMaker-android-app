@@ -294,3 +294,156 @@ bị hồng hoá + cắt chân chữ, nút "Quét nhạc" tàng hình.
 - Chưa kiểm được ở đây (chờ CI + máy thật): giao diện nút sau khi đổi
   AppCompatButton trên HyperOS (hết hồng hoá/cắt chữ phải xác nhận bằng
   mắt trên máy user); pipeline tự tải model chạy trọn vòng trên máy thật.
+
+## 9. v1.1.0 (vc3) — hàng loạt + Kim Vocal 2 + đồng hồ canh chặng (07/11/2026, Bạch Lộc)
+
+Ba việc theo thiết kế Cổ Lực Na Trát + đo kiểm Dương Mịch. CHƯA push — chờ Tổng 98 đẩy từ
+live chat kèm workflow release v1.1.0.
+
+### 9.1 VIỆC 1 — Làm hàng loạt (batch)
+
+- `data/JobStore.kt`: `Job` thêm `batchId: String?` (persist key `batchId`; sổ cũ thiếu key →
+  null; ghi JSONObject.NULL khi không có) và `lastProgressAt: Long` (persist; sổ cũ thiếu key →
+  lấy `updatedAt`). `enqueue(..., batchId)` thêm tham số; `JobStore.progress()` cập nhật
+  `lastProgressAt` trong RAM ở MỌI lần gọi (trước điểm tiết lưu ghi đĩa 400ms) — watchdog đọc
+  bản RAM cùng tiến trình nên không bị trễ tiết lưu.
+- `data/BatchPlan.kt` (MỚI, thuần, test được): trần `MAX_ITEMS = 10`, ước `250MB/bài`;
+  `parseLinks` (mỗi dòng 1 link, chỉ giữ dòng chứa "youtu", khử trùng giữ thứ tự);
+  `countError` (0 → lỗi nhập; >10 → chặn toàn bộ mẻ kèm câu báo rõ — không cắt lén);
+  `shortageBytes` + `fmtSize` (báo thiếu bao nhiêu); `summarize` gom đợt theo batchId, đợt mới
+  nhất lên trước, bài trong đợt theo thứ tự tạo, kèm đếm done/error/active/other.
+- `ui/AddSongActivity.kt`: thẻ "LÀM HÀNG LOẠT" — ô dán nhiều link + nút "Tạo đợt từ các link"
+  + nút "Chọn nhiều file nhạc/video…" (`OpenMultipleDocuments`) + checkbox "Dọn file trung gian
+  sau mỗi bài" (mặc định BẬT cho batch). Luồng batch KHÔNG fetchTitle ở UI: project tạo với
+  tiêu đề tạm (`Pipeline.YOUTUBE_PLACEHOLDER_TITLE` = "Bài từ YouTube" / tên file), payload
+  `{sepMode, autoRender, cleanup}` lấy tại thời điểm tạo mẻ, style/nền chung qua
+  `TemplateStore.applyTo` như project thường. Pre-flight StatFs TRƯỚC khi tạo mẻ: thiếu →
+  toast báo rõ số MB/GB còn thiếu, KHÔNG tạo mẻ (không đọc được số trống → không chặn).
+  File-picker: file không đọc được tên/không copy được vẫn tạo project + job (job tự báo lỗi
+  rõ ràng), các file còn lại trong mẻ chạy tiếp bình thường.
+- `service/Pipeline.kt`: `ensureSongWav` — sau khi tải YouTube xong và thời lượng hợp lệ, nếu
+  tiêu đề project vẫn là tiêu đề tạm thì thử `Youtube.fetchTitle` điền tiêu đề thật + nguồn
+  "youtube" cho project (lỗi lấy tiêu đề → giữ tạm, không chặn bài). Cuối `runPipeline` (chỉ khi
+  THÀNH CÔNG) nếu payload `cleanup=true` → `cleanupIntermediates`: xoá `hear16k.wav` + mọi file
+  `source.*` trong thư mục dự án; GIỮ song.wav/inst.wav/vocal.wav/lines.json/out.mp4. Lỗi dọn
+  nuốt lặng (không lật job thành lỗi). Job lỗi giữa mẻ: hành vi sẵn có — JobService bắt lỗi từng
+  job, ghi error, bài kế trong hàng đợi vẫn chạy (kịch bản đã kiểm ở mức logic + đọc code).
+- `ui/MainActivity.kt`: mục "Đợt hàng loạt" (header + container, ẩn khi không có đợt) dựng từ
+  `BatchPlan.summarize(jobs, projectTitles)`: thẻ đợt = tiêu đề đợt (tiêu đề bài đầu) + dòng
+  tổng "x/y xong · n lỗi · m đang chạy/chờ" + nút "Huỷ cả đợt" (hỏi xác nhận; huỷ mọi job
+  active của đợt qua `JobService.cancel`; chỉ hiện khi đợt còn job active) + từng bài 1 dòng
+  (tiêu đề, trạng thái: đang chạy/chờ kèm nhãn chặng + % · "✔ Đã xong" · lỗi đỏ kèm nội dung
+  lỗi · "Đã bị ngắt — bấm Chạy tiếp trong Studio" · "Đã huỷ") + nút "Mở Studio" từng bài.
+  Layout mới `item_batch.xml`, `item_batch_song.xml` (nút AppCompatButton minHeight 40dp —
+  giữ chuẩn chống cắt chữ của v1.0.1).
+- Hạ tầng hàng đợi GIỮ NGUYÊN (tuần tự sẵn có); `JobService.enqueue` thêm tham số batchId
+  truyền xuống JobStore. Sửa đổi JobService ở bản này chỉ thuộc việc 3 (xem 9.3).
+
+### 9.2 VIỆC 2 — Kim Vocal 2 (đã TỰ XÁC MINH đủ 3 điểm trước khi nối)
+
+Bằng chứng xác minh (đo thật 07/11/2026 trên VM, model tải về thư mục tạm rồi xoá):
+
+- **URL chính thức:** `https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/Kim_Vocal_2.onnx`
+  (asset trong release `all_public_uvr_models` của repo TRvlvr/model_repo — cùng họ phát hành
+  với model hiện tại UVR-MDX-NET-Inst_HQ_3).
+- **Dung lượng thật: 66.759.214 byte** (bằng hệt Inst_HQ_3 — cùng kiến trúc MDX-Net).
+- **SHA-256 thật: `ce74ef3b6a6024ce44211a07be9cf8bc6d87728cc852a68ab34eb8e58cde9c8b`.**
+- **Hợp đồng tensor (đọc bằng onnxruntime trên file thật):** input `input` float32
+  `[batch, 4, 3072, 256]` → output `output` float32 cùng shape — KHỚP NGUYÊN cách `Mdx.kt`
+  đang chạy (4 kênh "A", DIM_F 3072, DIM_T 256). Chạy thử 1 lượt suy luận trên phổ tổng hợp:
+  output đúng shape, mọi giá trị hữu hạn, |max| ≈ 2,83.
+- **Hướng stem:** Kim Vocal 2 dự đoán THẲNG VOCAL (khác Inst_HQ_3 dự đoán instrumental).
+
+Nối code:
+
+- `download/ModelManager.kt`: `MDX_NAME = "Kim_Vocal_2.onnx"`; `ModelFile` thêm
+  `predictsVocal: Boolean = false`; spec MDX mới (URL/size/sha256 ở trên, `predictsVocal = true`)
+  kèm comment bằng chứng. File model cũ Inst_HQ_3 còn trên máy user không bị xoá (chỉ không
+  còn được dùng) — user tự xoá nếu muốn nhẹ máy.
+- `audio/Mdx.kt`: tách phép suy stem thành hàm THUẦN `Mdx.splitStem(orig, predicted,
+  predictsVocal): Pair<FloatArray, FloatArray>` trả (inst, vocal): predictsVocal=true →
+  vocal = predicted (giữ nguyên), inst = (orig − predicted) kẹp [-1,1]; false → inst =
+  predicted, vocal = (orig − predicted) kẹp [-1,1]. Quy tắc: stem SUY RA luôn bị kẹp, stem DỰ
+  ĐOÁN giữ nguyên — khớp đúng hành vi bản cũ (bản cũ không kẹp inst dự đoán, có kẹp vocal suy
+  ra). `separate()` thêm tham số `modelPredictsVocal`; Pipeline.ensureBeat truyền
+  `ModelManager.MDX.predictsVocal`. Đầu ra bên ngoài giữ nguyên: `inst.wav` + `vocal.wav`.
+- Nhãn hiển thị: Thư viện "Tách beat AI (Kim Vocal 2 · ~67 MB)", radio trong màn Thêm bài
+  "…(model Kim Vocal 2)", hộp thoại Studio "Cần tải model Kim Vocal 2 (~67 MB)…".
+
+### 9.3 VIỆC 3 — Đồng hồ canh chặng (watchdog, hết treo im lặng)
+
+Sự cố gốc: v2.2.0 PC từng treo ở 47,2% suốt 12+ phút không ai biết; bản Android cũng có thể
+treo lặng ở bất kỳ chặng native nào (ffmpeg/sherpa/MDX). Thiết kế:
+
+- `data/Watchdog.kt` (MỚI, thuần): `STALL_LIMIT_MS = 10 phút`; `isStalled(job, now)` — chỉ cắt
+  khi status = "running" VÀ `lastProgressAt > 0` VÀ im lặng ≥ 10 phút (lastProgressAt = 0 =
+  sổ rất cũ → không cắt oan); `stallError(job)` =
+  "Chặng <label> đứng yên quá 10 phút — đã dừng job, bấm Chạy tiếp để thử lại" (label trống →
+  "đang xử lý").
+- `service/JobService.kt`: thay ExecutorService bằng vòng bơm Thread tường minh có đánh số
+  THẾ HỆ (`pumpGen`) + tập `abandonedJobs`. Luồng canh riêng (daemon, nhịp 30s) chạy khi
+  service sống: job đang chạy mà `Watchdog.isStalled` → (1) đánh dấu abandoned (mọi đường ghi
+  trạng thái của worker bị vô hiệu hoá từ đây), (2) JobStore.update status "error" +
+  `stallError`, (3) `notifyFinished` (Thư viện hiện thẻ lỗi đỏ + nút Chạy tiếp như mọi lỗi
+  khác), (4) `Ffmpeg.cancelCurrent()` huỷ phiên ffmpeg đang chạy, (5) tăng thế hệ + interrupt
+  luồng worker + khởi động vòng bơm MỚI chạy ngay bài kế trong hàng đợi (kể cả bài kế của cùng
+  đợt batch). Worker cũ nếu kẹt trong native không interrupt được sẽ tự kết thúc khi native trả
+  về và bị chặn ghi trạng thái nhờ abandoned + thế hệ. MỌI đường hoàn tất job (xong/lỗi/huỷ)
+  đều kiểm abandoned trước khi ghi; `finally` chỉ xoá `currentJobId` khi còn khớp job của mình
+  (không dẫm chân vòng bơm mới). `onDestroy`: tăng thế hệ + interrupt cả worker lẫn luồng canh.
+- **Lựa chọn áp dụng (ghi rõ theo yêu cầu):** watchdog áp cho MỌI loại job, KỂ CẢ job tải
+  model. Lý do: tải model vẫn báo tiến độ theo byte thật (~1MB/nhịp) qua cùng
+  `JobStore.progress()` nên job khoẻ không bao giờ chạm ngưỡng 10 phút im lặng; đổi lại nếu
+  luồng tải model treo thật (socket chết lặng không timeout) thì user cũng được cứu thay vì
+  đợi oan — đúng bài học sự cố v1.0.0.
+
+### 9.4 Kiểm chứng v1.1.0 (VM — không Gradle, harness như mục 8)
+
+- aapt2 compile toàn bộ res MỚI (thêm layout item_batch/item_batch_song + thẻ batch trong
+  activity_add_song + mục đợt trong activity_main): SẠCH. Link: bộ zip thư viện cũ + app.zip
+  mới — vấp xung đột styleable `SearchView` giữa material và appcompat khi link TAY (Gradle
+  xử lý theo package riêng nên CI không dính); xử lý kiểu harness như các bản trước: link
+  không kèm material.zip + ytdl.zip (res app không tham chiếu 2 thư viện này — nút đã là
+  AppCompatButton, app_name lấy từ app) và scratch themes thay 3 item chỉ-Material
+  (colorPrimaryVariant/colorSecondary/colorOnPrimary) bằng attr AppCompat — CHỈ ở cây scratch
+  `verify/build/res`, cây thật giữ nguyên. Link SẠCH, R.java đủ mọi id mới (etBatchLinks,
+  btnBatchLinks, btnPickFiles, cbCleanup, llBatches, tvBatchHeader, tvBatchTitle,
+  tvBatchSummary, btnBatchCancel, llBatchSongs, tvSongTitle, tvSongStatus, btnSongStudio).
+- **kotlinc 2.0.21 biên dịch TOÀN CÂY app (25 file Kotlin) + R.java: 0 lỗi.**
+- **Test JVM: CoreTest 22/22 PASS (giữ nguyên) · BannerTest 15/15 PASS (giữ nguyên, gồm ca
+  bệnh v1.0.0) · BatchTest MỚI 35/35 PASS**, gồm:
+  - parseLinks: lọc dòng rác/không phải YouTube, khử trùng giữ thứ tự, rỗng → 0 link;
+  - trần mẻ: 10 link OK, 11 link → countError chặn kèm câu báo rõ; 0 link → lỗi;
+  - pre-flight: đủ chỗ → thiếu 0; thiếu đúng 1 byte → báo 1; trống hoàn toàn → báo đủ
+    2 × 250MB; fmtSize "250 MB"/"1.5 GB";
+  - gom đợt: 2 đợt + job lẻ — job lẻ và batchId "" bị loại, đợt mới nhất lên trước, bài giữ
+    thứ tự tạo, đếm done/error/active/other đúng (ca "link hỏng giữa mẻ": bài giữa error, bài
+    sau vẫn done, đợt không sập);
+  - watchdog: đúng mốc 10' → cắt; 9'59" → chưa; job done treo lâu → không cắt; lastProgressAt
+    = 0 → không cắt oan; nhãn rỗng → câu lỗi dùng "đang xử lý", nguyên văn câu lỗi khớp UI;
+  - stem Kim Vocal 2 (số học thuần): cả 2 chiều (Kim: vocal = predicted, inst = orig −
+    predicted; Inst_HQ: ngược lại), inst + vocal khôi phục đúng bản gốc (sai số ≤ 1e-5), 200
+    mẫu ngẫu nhiên có seed, ca kẹp biên (suy ra 1.8 → kẹp 1.0, stem dự đoán −0.9 giữ nguyên),
+    im lặng → 2 stem 0.
+- Suy luận ONNX thật của Kim_Vocal_2.onnx trên VM: xem bằng chứng ở 9.2.
+- Giới hạn kiểm như các bản trước: hành vi service/hàng đợi/watchdog theo thời gian thật và
+  pipeline trên máy thật chỉ xác minh được bằng đọc code đối chiếu + test logic thuần — chốt
+  cuối vẫn là CI build + verdict máy thật của user.
+
+### 9.5 File đã sửa ở v1.1.0
+
+- `app/build.gradle` (versionCode 3, versionName "1.1.0")
+- `app/src/main/java/com/example/karaokemaker/data/JobStore.kt` (batchId + lastProgressAt)
+- `app/src/main/java/com/example/karaokemaker/data/BatchPlan.kt` (MỚI)
+- `app/src/main/java/com/example/karaokemaker/data/Watchdog.kt` (MỚI)
+- `app/src/main/java/com/example/karaokemaker/ui/AddSongActivity.kt` (chế độ hàng loạt)
+- `app/src/main/java/com/example/karaokemaker/ui/MainActivity.kt` (mục Đợt hàng loạt + nhãn model)
+- `app/src/main/java/com/example/karaokemaker/ui/StudioActivity.kt` (nhãn model trong hộp thoại)
+- `app/src/main/java/com/example/karaokemaker/service/JobService.kt` (bơm thế hệ + watchdog + batchId)
+- `app/src/main/java/com/example/karaokemaker/service/Pipeline.kt` (tiêu đề tạm → thật, dọn trung gian)
+- `app/src/main/java/com/example/karaokemaker/audio/Mdx.kt` (splitStem thuần 2 chiều)
+- `app/src/main/java/com/example/karaokemaker/download/ModelManager.kt` (spec Kim Vocal 2)
+- `app/src/main/res/layout/activity_add_song.xml` (thẻ LÀM HÀNG LOẠT + nhãn model)
+- `app/src/main/res/layout/activity_main.xml` (mục đợt + nhãn model)
+- `app/src/main/res/layout/item_batch.xml` + `item_batch_song.xml` (MỚI)
+- Test (ngoài cây app, ở `~/workspace/karaoke-android-verify/test/BatchTest.kt`): 35 ca mới.

@@ -12,11 +12,19 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Tách beat bằng model MDX-Net (UVR-MDX-NET-Inst_HQ_3) qua ONNX Runtime —
- * port của karaoke/mdx.py (bản PC). Giữ nguyên 100% thông số và thuật toán:
- * STFT n_fft=6144, hop=1024, đoạn model 256 khung, chồng lấp bước 192, cửa sổ
- * Hann theo thời gian, zero 3 bin thấp nhất, chuẩn hoá đỉnh 0.9, thứ tự kênh
- * "A" (reL, imL, reR, imR), stem giọng = bản gốc − instrumental.
+ * Tách beat bằng model MDX-Net qua ONNX Runtime — port của karaoke/mdx.py
+ * (bản PC). Giữ nguyên 100% thông số và thuật toán: STFT n_fft=6144,
+ * hop=1024, đoạn model 256 khung, chồng lấp bước 192, cửa sổ Hann theo thời
+ * gian, zero 3 bin thấp nhất, chuẩn hoá đỉnh 0.9, thứ tự kênh "A"
+ * (reL, imL, reR, imR).
+ *
+ * MODEL (v1.1.0): Kim Vocal 2 — hợp đồng tensor giống hệt model cũ
+ * (input [batch,4,3072,256] -> output cùng shape, đã xác minh bằng cách
+ * tải file thật về đọc graph + chạy thử) NHƯNG chiều stem NGƯỢC với
+ * UVR-MDX-NET-Inst_HQ_3 cũ: Kim dự đoán THẲNG stem GIỌNG, nên
+ * instrumental = bản gốc − giọng. Chiều này do [ModelManager] khai qua
+ * `predictsVocal` và phép tách stem nằm ở [StemMath] (thuần, test được);
+ * đầu ra bên ngoài KHÔNG đổi: inst.wav = nhạc nền, vocal.wav = giọng.
  *
  * Độ lệch CÓ CHỦ ĐÍCH so với bản PC (ghi rõ để đối chiếu): bản PC giữ phổ
  * của CẢ bài trong RAM (>1 GB — điện thoại không chịu nổi) nên bản Android
@@ -130,8 +138,29 @@ object Mdx {
     }
 
     /**
+     * Số học tách stem từ đầu ra của model MDX — THUẦN, không phụ thuộc
+     * Android/ONNX để kiểm thử bằng test JVM.
+     *
+     * Model trả stem nó dự đoán ([predicted], đã đưa về biên độ gốc):
+     * - predictsVocal = true (Kim Vocal 2): vocal = predicted,
+     *   instrumental = orig − predicted.
+     * - predictsVocal = false (Inst_HQ cũ): instrumental = predicted,
+     *   vocal = orig − predicted.
+     * Stem SUY RA (phép trừ) được kẹp [-1, 1] như hành vi cũ của vocal;
+     * stem model dự đoán giữ nguyên (ghi WAV sẽ tự kẹp khi lượng tử s16).
+     * Khi không chạm ngưỡng kẹp: instrumental + vocal == orig (kiểm ở test).
+     *
+     * @return (instrumental, vocal)
+     */
+    fun splitStem(orig: Float, predicted: Float, predictsVocal: Boolean): Pair<Float, Float> {
+        val derived = (orig - predicted).coerceIn(-1f, 1f)
+        return if (predictsVocal) derived to predicted else predicted to derived
+    }
+
+    /**
      * Tách instrumental từ [inWav] (WAV s16 stereo 44.1k) ghi ra [outWav];
-     * nếu [vocalOut] != null: ghi thêm stem giọng = gốc − instrumental.
+     * nếu [vocalOut] != null: ghi thêm stem giọng. [modelPredictsVocal]
+     * quyết định chiều stem (xem [splitStem]).
      * [modelFile] là file ONNX đã tải + đã đối chiếu sha256 (xem ModelManager).
      */
     fun separate(
@@ -139,6 +168,7 @@ object Mdx {
         outWav: File,
         vocalOut: File?,
         modelFile: File,
+        modelPredictsVocal: Boolean,
         progress: Progress?,
         isCancelled: () -> Boolean = { false }
     ) {
@@ -185,7 +215,9 @@ object Mdx {
                 val extEnd = min(nSamples, blockEnd + ovSamples)
                 val segL = inL.copyOfRange(extStart, extEnd)
                 val segR = inR.copyOfRange(extStart, extEnd)
-                val (instL, instR) = separateSegment(
+                // predL/predR = stem model DỰ ĐOÁN (giọng nếu Kim Vocal 2,
+                // nhạc nền nếu Inst_HQ cũ) — chiều do modelPredictsVocal.
+                val (predL, predR) = separateSegment(
                     session, inputName, segL, segR
                 ) { frac ->
                     val done = doneSamples + (blockEnd - blockStart) * frac
@@ -195,13 +227,15 @@ object Mdx {
                 val coreOff = blockStart - extStart
                 val coreLen = blockEnd - blockStart
                 for (i in 0 until coreLen) {
-                    val il = instL[coreOff + i] / scale
-                    val ir = instR[coreOff + i] / scale
+                    val pl = predL[coreOff + i] / scale
+                    val pr = predR[coreOff + i] / scale
+                    val (il, vl) = splitStem(left[blockStart + i], pl, modelPredictsVocal)
+                    val (ir, vr) = splitStem(right[blockStart + i], pr, modelPredictsVocal)
                     outL[blockStart + i] = il
                     outR[blockStart + i] = ir
                     if (vocL != null && vocR != null) {
-                        vocL[blockStart + i] = (left[blockStart + i] - il).coerceIn(-1f, 1f)
-                        vocR[blockStart + i] = (right[blockStart + i] - ir).coerceIn(-1f, 1f)
+                        vocL[blockStart + i] = vl
+                        vocR[blockStart + i] = vr
                     }
                 }
                 doneSamples += coreLen
@@ -322,9 +356,11 @@ object Mdx {
         }
         val (reL, imL) = toFullSpec(0)
         val (reR, imR) = toFullSpec(1)
-        val instL = istft(reL, imL, segL.size)
-        val instR = istft(reR, imR, segR.size)
-        return instL to instR
+        // Sóng của stem model dự đoán (chưa phân biệt giọng/nhạc nền —
+        // chiều stem được quyết ở splitStem tại nơi gọi).
+        val predL = istft(reL, imL, segL.size)
+        val predR = istft(reR, imR, segR.size)
+        return predL to predR
     }
 
     private fun absf(x: Float): Float = if (x < 0) -x else x

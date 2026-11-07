@@ -109,7 +109,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Tách beat AI (MDX · ~67 MB): chưa tải" />
+            android:text="Tách beat AI (Kim Vocal 2 · ~67 MB): chưa tải" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -239,6 +239,24 @@
             android:textColor="@color/white"
             android:textStyle="bold" />
     </LinearLayout>
+
+    <!-- Đợt hàng loạt (v1.1.0): chỉ hiện khi có job mang batchId trong sổ -->
+    <TextView
+        android:id="@+id/tvBatchHeader"
+        style="@style/KmTextTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Đợt hàng loạt"
+        android:textSize="17sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/llBatches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"

@@ -137,6 +137,18 @@ object Pipeline {
         Ffmpeg.extractAudio(srcFile.absolutePath, songWav)
         p.durationSec = Ffmpeg.probeDuration(songWav.absolutePath)
         if (p.durationSec <= 0) throw IllegalStateException("File không đọc được tiếng — thử file/link khác")
+        // Bài tạo từ đợt HÀNG LOẠT (v1.1.0) mang tiêu đề tạm vì UI không
+        // fetchTitle từng link (chặn giao diện + chậm): giờ tải xong mới
+        // hỏi metadata yt-dlp lấy tiêu đề thật. Lấy không được thì giữ tạm
+        // — tuyệt đối không để việc này chặn pipeline.
+        if (p.sourceType == "youtube" && p.title == YOUTUBE_PLACEHOLDER_TITLE) {
+            try {
+                val real = Youtube.fetchTitle(context, p.sourceRef)
+                if (real.isNotBlank()) p.title = real
+            } catch (e: Exception) {
+                // giữ tiêu đề tạm — user sửa lại trong Studio được
+            }
+        }
         ProjectStore.save(p)
         // peaks cho waveform ở Studio (tính 1 lần, cache lại)
         val peaksFile = File(dir, "peaks.bin")
@@ -205,6 +217,7 @@ object Pipeline {
                 Mdx.separate(
                     songWav, instWav, vocal,
                     ModelManager.fileOf(context, ModelManager.MDX_NAME),
+                    ModelManager.MDX.predictsVocal,
                     { pct, label -> rep.report(sepLo + (hi - sepLo) * pct / 100.0, label) }
                 ) { JobStore.get(job.id)?.status == "canceled" }
             }
@@ -441,5 +454,32 @@ object Pipeline {
         } else {
             rep.report(100.0, "đã xong phần lời & beat — mở Studio để chỉnh rồi xuất")
         }
+        // Tuỳ chọn của đợt hàng loạt (v1.1.0): bài XONG TOÀN BỘ mới dọn —
+        // job lỗi/huỷ giữ nguyên file để Chạy tiếp không phải làm lại.
+        if (payload.optBoolean("cleanup", false)) {
+            cleanupIntermediates(job)
+        }
     }
+
+    /**
+     * Xoá file trung gian của 1 dự án sau khi pipeline chạy xong:
+     * hear16k.wav (bản 16k cho AI nghe, chép lại được bất cứ lúc nào) +
+     * source.* (file nguồn đã chép vào thư mục dự án lúc nạp bài).
+     * GIỮ: song.wav / inst.wav / vocal.wav / lines.json / out.mp4 —
+     * Studio vẫn mở sửa + xuất lại được bình thường.
+     */
+    private fun cleanupIntermediates(job: Job) {
+        try {
+            val dir = ProjectStore.dirOf(job.projectId)
+            File(dir, "hear16k.wav").delete()
+            dir.listFiles()
+                ?.filter { it.name.startsWith("source.") }
+                ?.forEach { it.delete() }
+        } catch (e: Exception) {
+            // dọn không được thì thôi — không đáng để job đã xong thành lỗi
+        }
+    }
+
+    /** Tiêu đề tạm của dự án YouTube (khớp literal ở AddSongActivity). */
+    const val YOUTUBE_PLACEHOLDER_TITLE = "Bài từ YouTube"
 }

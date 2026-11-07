@@ -529,7 +529,7 @@ class StudioActivity : AppCompatActivity() {
         if (!ModelManager.mdxReady(this)) {
             AlertDialog.Builder(this)
                 .setTitle("Chưa có model tách beat AI")
-                .setMessage("Cần tải model MDX (~67 MB) ở Thư viện trước. Tải xong quay lại đây bấm tách AI.")
+                .setMessage("Cần tải model Kim Vocal 2 (~67 MB) ở Thư viện trước. Tải xong quay lại đây bấm tách AI.")
                 .setPositiveButton("Về Thư viện") { _, _ -> finish() }
                 .setNegativeButton("Để sau", null)
                 .show()

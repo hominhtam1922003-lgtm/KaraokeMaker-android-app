@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.karaokemaker.R
 import com.example.karaokemaker.core.Gradients
+import com.example.karaokemaker.data.BatchPlan
 import com.example.karaokemaker.data.Job
 import com.example.karaokemaker.data.JobBanner
 import com.example.karaokemaker.data.JobStore
@@ -58,6 +59,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cardJobError: LinearLayout
     private lateinit var tvJobErrorTitle: TextView
     private lateinit var tvJobErrorText: TextView
+    private lateinit var tvBatchHeader: TextView
+    private lateinit var llBatches: LinearLayout
 
     /** Job lỗi đang hiện trên thẻ lỗi — nút CHẠY TIẾP resume đúng job này. */
     private var failedJobId: String? = null
@@ -82,6 +85,8 @@ class MainActivity : AppCompatActivity() {
         cardJobError = findViewById(R.id.cardJobError)
         tvJobErrorTitle = findViewById(R.id.tvJobErrorTitle)
         tvJobErrorText = findViewById(R.id.tvJobErrorText)
+        tvBatchHeader = findViewById(R.id.tvBatchHeader)
+        llBatches = findViewById(R.id.llBatches)
 
         rvProjects.layoutManager = LinearLayoutManager(this)
         rvProjects.adapter = projectsAdapter
@@ -397,11 +402,12 @@ class MainActivity : AppCompatActivity() {
     private fun refreshModels() {
         tvWhisperModel.text = "Chép lời (Whisper small · ~376 MB): " +
             if (ModelManager.whisperReady(this)) "✔ đã tải" else "chưa tải"
-        tvMdxModel.text = "Tách beat AI (MDX · ~67 MB): " +
+        tvMdxModel.text = "Tách beat AI (Kim Vocal 2 · ~67 MB): " +
             if (ModelManager.mdxReady(this)) "✔ đã tải" else "chưa tải"
     }
 
     private fun refreshJobs() {
+        refreshBatches()
         when (val state = JobBanner.pick(JobStore.all())) {
             is JobBanner.State.Active -> {
                 val active = state.job
@@ -443,6 +449,92 @@ class MainActivity : AppCompatActivity() {
                 refreshProjects()
                 refreshModels()
             }
+        }
+    }
+
+    // ---------------- đợt hàng loạt (v1.1.0) ----------------
+
+    /**
+     * Dựng mục "Đợt hàng loạt" hoàn toàn từ JobStore + ProjectStore
+     * (BatchPlan.summarize gom theo batchId — không bảng dữ liệu mới).
+     * Mỗi đợt 1 thẻ: tổng kết xong/lỗi/đang chạy + từng bài 1 dòng kèm
+     * nút Mở Studio; Huỷ cả đợt = huỷ mọi job còn active trong đợt.
+     */
+    private fun refreshBatches() {
+        val summaries = BatchPlan.summarize(JobStore.all())
+        if (summaries.isEmpty()) {
+            tvBatchHeader.visibility = View.GONE
+            llBatches.visibility = View.GONE
+            llBatches.removeAllViews()
+            return
+        }
+        tvBatchHeader.visibility = View.VISIBLE
+        llBatches.visibility = View.VISIBLE
+        llBatches.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+        for (sum in summaries) {
+            val card = inflater.inflate(R.layout.item_batch, llBatches, false)
+            val tvTitle = card.findViewById<TextView>(R.id.tvBatchTitle)
+            val tvSummary = card.findViewById<TextView>(R.id.tvBatchSummary)
+            val btnCancel = card.findViewById<Button>(R.id.btnBatchCancel)
+            val llSongs = card.findViewById<LinearLayout>(R.id.llBatchSongs)
+            tvTitle.text = "Đợt ${sum.total} bài"
+            tvSummary.text = buildString {
+                append("${sum.done}/${sum.total} xong")
+                if (sum.error > 0) append(" · ${sum.error} lỗi")
+                if (sum.active > 0) append(" · ${sum.active} đang chạy/chờ")
+                if (sum.other > 0) append(" · ${sum.other} huỷ/gián đoạn")
+            }
+            btnCancel.visibility = if (sum.active > 0) View.VISIBLE else View.GONE
+            btnCancel.setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Huỷ cả đợt?")
+                    .setMessage("Dừng ${sum.active} bài còn đang chạy/chờ trong đợt này? Bài đã xong giữ nguyên.")
+                    .setPositiveButton("Huỷ cả đợt") { _, _ ->
+                        sum.jobs.filter { it.isActive() }
+                            .forEach { JobService.cancel(this@MainActivity, it.id) }
+                    }
+                    .setNegativeButton("Không", null)
+                    .show()
+            }
+            for (job in sum.jobs) {
+                val row = inflater.inflate(R.layout.item_batch_song, llSongs, false)
+                val tvSongTitle = row.findViewById<TextView>(R.id.tvSongTitle)
+                val tvSongStatus = row.findViewById<TextView>(R.id.tvSongStatus)
+                val btnStudio = row.findViewById<Button>(R.id.btnSongStudio)
+                tvSongTitle.text = ProjectStore.get(job.projectId)?.title ?: job.typeLabel()
+                when {
+                    job.isActive() -> {
+                        tvSongStatus.setTextColor(getColor(R.color.warn_orange))
+                        tvSongStatus.text =
+                            "${job.label.ifBlank { "đang chờ" }} — ${job.progress.toInt()}%"
+                    }
+                    job.status == "done" -> {
+                        tvSongStatus.setTextColor(getColor(R.color.ok_green))
+                        tvSongStatus.text = "✔ Đã xong"
+                    }
+                    job.status == "error" -> {
+                        tvSongStatus.setTextColor(getColor(R.color.error_red))
+                        tvSongStatus.text = "✖ Lỗi: ${job.error ?: "không rõ nguyên nhân"}"
+                    }
+                    job.status == "interrupted" -> {
+                        tvSongStatus.setTextColor(getColor(R.color.error_red))
+                        tvSongStatus.text = "Bị gián đoạn — mở Studio để chạy tiếp"
+                    }
+                    else -> {
+                        tvSongStatus.setTextColor(getColor(R.color.idle_gray))
+                        tvSongStatus.text = "Đã huỷ"
+                    }
+                }
+                btnStudio.setOnClickListener {
+                    startActivity(
+                        Intent(this@MainActivity, StudioActivity::class.java)
+                            .putExtra(StudioActivity.EXTRA_PROJECT_ID, job.projectId)
+                    )
+                }
+                llSongs.addView(row)
+            }
+            llBatches.addView(card)
         }
     }
 
