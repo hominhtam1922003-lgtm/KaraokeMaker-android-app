@@ -64,6 +64,30 @@ object Pipeline {
         checkCancelled(job)
     }
 
+    /**
+     * Tự bảo đảm model ngay trong chặng (v1.0.1): chặng nào cần model mà máy
+     * chưa có thì TỰ TẢI ngay tại chỗ, tiến độ tải ánh xạ vào khoảng [lo, hi]
+     * của chặng — thay cho hành vi cũ là ném lỗi bắt user ra Thư viện tải
+     * trước (job trọn gói chết ở mốc 18% nếu user bấm chạy trước khi model
+     * tải xong). Lỗi tải (mạng / thiếu dung lượng / sai sha256) ném NGUYÊN
+     * VĂN của ModelManager lên job để UI hiện đúng nguyên nhân.
+     */
+    private fun downloadModelStage(
+        context: Context,
+        job: Job,
+        rep: Reporter,
+        specs: List<ModelManager.ModelFile>,
+        label: String,
+        lo: Double,
+        hi: Double
+    ) {
+        rep.report(lo, label)
+        ModelManager.download(context, specs, { pct, _ ->
+            rep.report(lo + (hi - lo) * pct / 100.0, label)
+        }) { JobStore.get(job.id)?.status == "canceled" }
+        checkCancelled(job)
+    }
+
     // ---------------- chặng: tải bài / nạp nguồn ----------------
 
     private fun projectOrThrow(job: Job): Project =
@@ -166,16 +190,22 @@ object Pipeline {
                 File(dir, "vocal.wav").delete()
             }
             "ai" -> {
+                var sepLo = spanLo
                 if (!ModelManager.mdxReady(context)) {
-                    throw IllegalStateException(
-                        "Chưa có model AI tách beat — hãy tải model MDX trước (nút Tải model AI ở Thư viện)"
+                    // Chưa có model: tự tải ngay trong chặng (tải chiếm nửa
+                    // đầu khoảng của chặng), tách chạy ở nửa còn lại.
+                    val dlHi = lo + (hi - lo) * 0.55
+                    downloadModelStage(
+                        context, job, rep, listOf(ModelManager.MDX),
+                        "đang tải model tách beat AI", spanLo, dlHi
                     )
+                    sepLo = dlHi
                 }
                 val vocal = File(dir, "vocal.wav")
                 Mdx.separate(
                     songWav, instWav, vocal,
                     ModelManager.fileOf(context, ModelManager.MDX_NAME),
-                    { pct, label -> rep.report(spanLo + (hi - spanLo) * pct / 100.0, label) }
+                    { pct, label -> rep.report(sepLo + (hi - sepLo) * pct / 100.0, label) }
                 ) { JobStore.get(job.id)?.status == "canceled" }
             }
             else -> throw IllegalArgumentException("Chế độ tách beat lạ: $mode")
@@ -215,19 +245,25 @@ object Pipeline {
             }
         }
         ensureSongWav(context, job, rep, lo, lo + (hi - lo) * 0.1)
+        var prepAt = lo + (hi - lo) * 0.15
         if (!ModelManager.whisperReady(context)) {
-            throw IllegalStateException(
-                "Chưa có model AI nghe lời — hãy tải model Whisper trước (nút Tải model AI ở Thư viện)"
+            // Chưa có model: tự tải ngay trong chặng rồi mới chép tiếp.
+            val dlLo = lo + (hi - lo) * 0.1
+            val dlHi = lo + (hi - lo) * 0.35
+            downloadModelStage(
+                context, job, rep, ModelManager.WHISPER_FILES,
+                "đang tải model chép lời AI", dlLo, dlHi
             )
+            prepAt = dlHi + (hi - dlHi) * 0.03
         }
         val dir = ProjectStore.dirOf(p.id)
         val vocal = File(dir, "vocal.wav")
         val hearSrc = if (vocal.exists() && vocal.length() > 0) vocal else File(dir, "song.wav")
         val wav16 = File(dir, "hear16k.wav")
-        rep.report(lo + (hi - lo) * 0.15, "đang chuẩn bị âm thanh cho AI nghe")
+        rep.report(prepAt, "đang chuẩn bị âm thanh cho AI nghe")
         Ffmpeg.decode16kMono(hearSrc.absolutePath, wav16)
         checkCancelled(job)
-        val spanLo = lo + (hi - lo) * 0.2
+        val spanLo = maxOf(lo + (hi - lo) * 0.2, prepAt + (hi - prepAt) * 0.05)
         val spanHi = lo + (hi - lo) * 0.9
         val segments = Whisper.transcribe(wav16, ModelManager.modelsDir(context), { pct, label ->
             rep.report(spanLo + (spanHi - spanLo) * pct / 100.0, label)

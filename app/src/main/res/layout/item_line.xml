@@ -86,31 +86,49 @@
             android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnMinus"
-                android:layout_width="40dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_btn_dark"
+                android:minWidth="44dp"
+                android:minHeight="40dp"
+                android:paddingStart="2dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="2dp"
+                android:paddingBottom="5dp"
                 android:text="−0,1"
                 android:textColor="@color/text_main"
                 android:textSize="11sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnPlus"
-                android:layout_width="40dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:background="@drawable/bg_btn_dark"
+                android:minWidth="44dp"
+                android:minHeight="40dp"
+                android:paddingStart="2dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="2dp"
+                android:paddingBottom="5dp"
                 android:text="+0,1"
                 android:textColor="@color/text_main"
                 android:textSize="11sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnEdit"
-                android:layout_width="40dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:background="@drawable/bg_btn_dark"
+                android:minWidth="44dp"
+                android:minHeight="40dp"
+                android:paddingStart="2dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="2dp"
+                android:paddingBottom="5dp"
                 android:text="✎"
                 android:textColor="@color/text_main"
                 android:textSize="12sp" />

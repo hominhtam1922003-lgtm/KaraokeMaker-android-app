@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.karaokemaker.R
 import com.example.karaokemaker.core.Gradients
 import com.example.karaokemaker.data.Job
+import com.example.karaokemaker.data.JobBanner
 import com.example.karaokemaker.data.JobStore
 import com.example.karaokemaker.data.Project
 import com.example.karaokemaker.data.ProjectStore
@@ -54,6 +55,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cardJob: LinearLayout
     private lateinit var tvJobText: TextView
     private lateinit var pbJob: ProgressBar
+    private lateinit var cardJobError: LinearLayout
+    private lateinit var tvJobErrorTitle: TextView
+    private lateinit var tvJobErrorText: TextView
+
+    /** Job lỗi đang hiện trên thẻ lỗi — nút CHẠY TIẾP resume đúng job này. */
+    private var failedJobId: String? = null
 
     private val projectsAdapter = ProjectsAdapter()
     private val mediaAdapter = MediaAdapter()
@@ -72,6 +79,9 @@ class MainActivity : AppCompatActivity() {
         cardJob = findViewById(R.id.cardJob)
         tvJobText = findViewById(R.id.tvJobText)
         pbJob = findViewById(R.id.pbJob)
+        cardJobError = findViewById(R.id.cardJobError)
+        tvJobErrorTitle = findViewById(R.id.tvJobErrorTitle)
+        tvJobErrorText = findViewById(R.id.tvJobErrorText)
 
         rvProjects.layoutManager = LinearLayoutManager(this)
         rvProjects.adapter = projectsAdapter
@@ -103,6 +113,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnScanMedia).setOnClickListener { scanMedia() }
         findViewById<Button>(R.id.btnJobCancel).setOnClickListener {
             JobStore.all().firstOrNull { it.isActive() }?.let { JobService.cancel(this, it.id) }
+        }
+        findViewById<Button>(R.id.btnJobResume).setOnClickListener {
+            failedJobId?.let { id ->
+                JobService.resume(this, id)
+                toast("Đang chạy tiếp — phần nào xong rồi sẽ không làm lại")
+            }
         }
         requestNotificationPermission()
         JobStore.addListener(storeListener)
@@ -200,20 +216,27 @@ class MainActivity : AppCompatActivity() {
                         else -> "gray"
                     }
                 )
-                val activeJob = JobStore.forProject(p.id).firstOrNull { it.isActive() }
-                val errJob = JobStore.forProject(p.id).firstOrNull { it.status == "error" || it.status == "interrupted" }
+                // Dòng tóm tắt phản ánh job MỚI NHẤT của dự án (JobBanner
+                // chọn hộ): đang chạy -> tiến độ; lỗi -> "bị lỗi: <error>"
+                // đỏ; gián đoạn -> "bị gián đoạn" đỏ; xong/huỷ -> ẩn.
+                val lineJob = JobBanner.projectLineJob(JobStore.forProject(p.id))
                 when {
-                    activeJob != null -> {
+                    lineJob == null -> tvJobLabel.visibility = View.GONE
+                    lineJob.isActive() -> {
                         tvJobLabel.visibility = View.VISIBLE
                         tvJobLabel.setTextColor(getColor(R.color.warn_orange))
-                        tvJobLabel.text = "${activeJob.typeLabel()}: ${activeJob.label} — ${activeJob.progress.toInt()}%"
+                        tvJobLabel.text = "${lineJob.typeLabel()}: ${lineJob.label} — ${lineJob.progress.toInt()}%"
                     }
-                    errJob != null -> {
+                    lineJob.status == "error" -> {
                         tvJobLabel.visibility = View.VISIBLE
                         tvJobLabel.setTextColor(getColor(R.color.error_red))
-                        tvJobLabel.text = "${errJob.typeLabel()} bị lỗi/gián đoạn — vào Studio để chạy tiếp"
+                        tvJobLabel.text = "${lineJob.typeLabel()} bị lỗi: ${lineJob.error ?: "không rõ nguyên nhân"}"
                     }
-                    else -> tvJobLabel.visibility = View.GONE
+                    else -> { // interrupted
+                        tvJobLabel.visibility = View.VISIBLE
+                        tvJobLabel.setTextColor(getColor(R.color.error_red))
+                        tvJobLabel.text = "${lineJob.typeLabel()} bị gián đoạn"
+                    }
                 }
                 itemView.setOnClickListener {
                     startActivity(
@@ -379,22 +402,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshJobs() {
-        val active = JobStore.all().firstOrNull { it.isActive() }
-        if (active == null) {
-            cardJob.visibility = View.GONE
-            refreshProjects()
-            refreshModels()
-            return
+        when (val state = JobBanner.pick(JobStore.all())) {
+            is JobBanner.State.Active -> {
+                val active = state.job
+                failedJobId = null
+                cardJobError.visibility = View.GONE
+                cardJob.visibility = View.VISIBLE
+                val title = ProjectStore.get(active.projectId)?.title
+                tvJobText.text = buildString {
+                    append(active.typeLabel())
+                    if (!title.isNullOrBlank()) append(" · ").append(title)
+                    append(" — ").append(active.label)
+                    if (active.status == "queued") append(" (đang chờ)")
+                }
+                pbJob.progress = active.progress.toInt()
+            }
+            is JobBanner.State.Failed -> {
+                // v1.0.1: job lỗi PHẢI hiện ngay ở Thư viện kèm nội dung lỗi
+                // đầy đủ + nút Chạy tiếp — không để user đợi oan như v1.0.0.
+                val failed = state.job
+                failedJobId = failed.id
+                cardJob.visibility = View.GONE
+                cardJobError.visibility = View.VISIBLE
+                val title = ProjectStore.get(failed.projectId)?.title
+                tvJobErrorTitle.text = buildString {
+                    append("⚠ ")
+                    append(failed.typeLabel())
+                    if (!title.isNullOrBlank()) append(" · ").append(title)
+                    append(if (failed.status == "interrupted") " — bị gián đoạn" else " — bị lỗi")
+                }
+                tvJobErrorText.text = failed.error?.takeIf { it.isNotBlank() }
+                    ?: "Đã xảy ra lỗi không rõ nguyên nhân. Bấm Chạy tiếp để thử lại."
+                refreshProjects()
+                refreshModels()
+            }
+            JobBanner.State.None -> {
+                failedJobId = null
+                cardJob.visibility = View.GONE
+                cardJobError.visibility = View.GONE
+                refreshProjects()
+                refreshModels()
+            }
         }
-        cardJob.visibility = View.VISIBLE
-        val title = ProjectStore.get(active.projectId)?.title
-        tvJobText.text = buildString {
-            append(active.typeLabel())
-            if (!title.isNullOrBlank()) append(" · ").append(title)
-            append(" — ").append(active.label)
-            if (active.status == "queued") append(" (đang chờ)")
-        }
-        pbJob.progress = active.progress.toInt()
     }
 
     // ---------------- phụ trợ ----------------

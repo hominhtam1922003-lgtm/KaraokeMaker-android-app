@@ -13,11 +13,17 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnBack"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_btn_dark"
+            android:minWidth="44dp"
+            android:minHeight="44dp"
+            android:paddingStart="0dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="0dp"
+            android:paddingBottom="6dp"
             android:text="←"
             android:textColor="@color/text_main"
             android:textSize="18sp" />
@@ -64,14 +70,17 @@
             android:textStyle="bold"
             android:visibility="gone" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnToExport"
             android:layout_width="wrap_content"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_gradient_btn"
+            android:minHeight="48dp"
             android:paddingStart="14dp"
+            android:paddingTop="8dp"
             android:paddingEnd="14dp"
+            android:paddingBottom="8dp"
             android:text="Xuất video →"
             android:textColor="@color/white"
             android:textStyle="bold" />
@@ -99,30 +108,44 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnPlay"
                 android:layout_width="52dp"
                 android:layout_height="52dp"
                 android:background="@drawable/bg_circle_grad"
+                android:paddingStart="0dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
                 android:text="▶"
                 android:textColor="@color/white"
                 android:textSize="20sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnBack5"
-                android:layout_width="wrap_content"
-                android:layout_height="44dp"
+                android:layout_width="56dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="48dp"
+                android:paddingStart="0dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="8dp"
                 android:text="−5s"
                 android:textColor="@color/text_main" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnFwd5"
-                android:layout_width="wrap_content"
-                android:layout_height="44dp"
+                android:layout_width="56dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="48dp"
+                android:paddingStart="0dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="8dp"
                 android:text="+5s"
                 android:textColor="@color/text_main" />
 
@@ -131,19 +154,25 @@
                 style="@style/KmTextSub"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="0:00 / 0:00" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnTap"
                 android:layout_width="wrap_content"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_gradient_btn"
-                android:paddingStart="18dp"
-                android:paddingEnd="18dp"
+                android:minHeight="52dp"
+                android:paddingStart="12dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
                 android:text="⏺ GẮN NHỊP"
                 android:textColor="@color/white"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -186,23 +215,29 @@
         android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnTabLines"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/bg_btn_selected"
+            android:minHeight="48dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="Dòng lời"
             android:textColor="@color/text_main"
             android:textStyle="bold" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnTabStyle"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="48dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:text="Phong cách"
             android:textColor="@color/text_main"
             android:textStyle="bold" />
@@ -243,14 +278,20 @@
                         android:layout_weight="1"
                         android:text="Đang xử lý..." />
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnJobCancel"
                         android:layout_width="wrap_content"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:background="@drawable/bg_btn_dark"
+                        android:minHeight="40dp"
+                        android:paddingStart="14dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="6dp"
                         android:text="Huỷ"
-                        android:textColor="@color/error_red"
-                        android:textSize="12sp" />
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <ProgressBar
@@ -278,23 +319,29 @@
                 android:layout_marginTop="4dp"
                 android:orientation="horizontal">
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnSeparateFast"
                     android:layout_width="0dp"
-                    android:layout_height="46dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/bg_btn_dark"
+                    android:minHeight="48dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:text="Tách beat nhanh"
                     android:textColor="@color/text_main"
                     android:textSize="13sp" />
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnSeparateAi"
                     android:layout_width="0dp"
-                    android:layout_height="46dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_btn_dark"
+                    android:minHeight="48dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:text="Tách beat AI"
                     android:textColor="@color/text_main"
                     android:textSize="13sp" />
@@ -306,23 +353,29 @@
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnTranscribe"
                     android:layout_width="0dp"
-                    android:layout_height="46dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/bg_btn_dark"
+                    android:minHeight="48dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:text="🤖 Chép lời AI"
                     android:textColor="@color/text_main"
                     android:textSize="13sp" />
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnPasteLyrics"
                     android:layout_width="0dp"
-                    android:layout_height="46dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_btn_dark"
+                    android:minHeight="48dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:text="📋 Dán lời / .lrc"
                     android:textColor="@color/text_main"
                     android:textSize="13sp" />
@@ -541,23 +594,29 @@
                     android:layout_marginTop="8dp"
                     android:orientation="horizontal">
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnPickBgImage"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:background="@drawable/bg_btn_dark"
+                        android:minHeight="48dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         android:text="Chọn ảnh nền"
                         android:textColor="@color/text_main"
                         android:textSize="13sp" />
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnPickBgVideo"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_btn_dark"
+                        android:minHeight="48dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         android:text="Chọn video nền"
                         android:textColor="@color/text_main"
                         android:textSize="13sp" />
@@ -592,34 +651,43 @@
                     android:layout_marginTop="6dp"
                     android:orientation="horizontal">
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnR169"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:background="@drawable/bg_btn_selected"
+                        android:minHeight="48dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         android:text="16:9 Ngang"
                         android:textColor="@color/text_main"
                         android:textSize="13sp" />
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnR916"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_btn_dark"
+                        android:minHeight="48dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         android:text="9:16 Dọc"
                         android:textColor="@color/text_main"
                         android:textSize="13sp" />
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnR11"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_btn_dark"
+                        android:minHeight="48dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
                         android:text="1:1 Vuông"
                         android:textColor="@color/text_main"
                         android:textSize="13sp" />

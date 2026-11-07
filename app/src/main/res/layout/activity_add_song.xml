@@ -16,11 +16,17 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnBack"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_btn_dark"
+                android:minWidth="44dp"
+                android:minHeight="44dp"
+                android:paddingStart="0dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="6dp"
                 android:text="←"
                 android:textColor="@color/text_main"
                 android:textSize="18sp" />
@@ -60,12 +66,15 @@
                 android:textColor="@color/text_main"
                 android:textColorHint="@color/text_faint" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnFromLink"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_gradient_btn"
+                android:minHeight="52dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:text="Tự làm từ link này"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
@@ -86,12 +95,15 @@
                 android:layout_height="wrap_content"
                 android:text="HOẶC CHỌN FILE TRONG MÁY" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnPickFile"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="52dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:text="📁 Chọn file nhạc / video"
                 android:textColor="@color/text_main" />
         </LinearLayout>
@@ -131,7 +143,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="6dp"
-                    android:text="AI — tách bằng model MDX (beat sạch; bài 4 phút có thể mất 8–16 phút, cần tải model trước)"
+                    android:text="AI — tách bằng model MDX (beat sạch; bài 4 phút có thể mất 8–16 phút; chưa có model thì app tự tải khi chạy)"
                     android:textColor="@color/text_main" />
             </RadioGroup>
 
@@ -149,7 +161,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Mọi việc chạy ở nền: đóng app vẫn chạy tiếp, mở lại thấy tiến độ. Chép lời cần model Whisper — nếu chưa tải, vào Thư viện tải trước." />
+                android:text="Mọi việc chạy ở nền: đóng app vẫn chạy tiếp, mở lại thấy tiến độ. Model AI (tách beat / chép lời) nếu chưa có, app sẽ tự tải ngay khi chạy tới chặng cần nó." />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

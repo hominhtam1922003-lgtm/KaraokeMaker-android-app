@@ -56,45 +56,68 @@
         android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnQOpen"
             android:layout_width="wrap_content"
-            android:layout_height="38dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="42dp"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
             android:text="▶ Mở xem"
             android:textColor="@color/text_main"
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnQShare"
             android:layout_width="wrap_content"
-            android:layout_height="38dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="42dp"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
             android:text="Chia sẻ"
             android:textColor="@color/text_main"
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnQResume"
             android:layout_width="wrap_content"
-            android:layout_height="38dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="42dp"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
             android:text="Chạy tiếp"
             android:textColor="@color/warn_orange"
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnQCancel"
             android:layout_width="wrap_content"
-            android:layout_height="38dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="42dp"
+            android:paddingStart="10dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
             android:text="Huỷ"
-            android:textColor="@color/error_red"
+            android:textColor="@color/white"
             android:textSize="12sp"
+            android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

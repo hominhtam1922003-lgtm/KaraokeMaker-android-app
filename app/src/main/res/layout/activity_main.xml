@@ -51,24 +51,30 @@
         android:layout_marginTop="14dp"
         android:orientation="horizontal">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnCreate"
             android:layout_width="0dp"
-            android:layout_height="52dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/bg_gradient_btn"
+            android:minHeight="52dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:text="+ Tạo video karaoke"
             android:textColor="@color/white"
             android:textStyle="bold" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnImport"
             android:layout_width="wrap_content"
-            android:layout_height="52dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="52dp"
             android:paddingStart="16dp"
+            android:paddingTop="10dp"
             android:paddingEnd="16dp"
+            android:paddingBottom="10dp"
             android:text="⬇ Nhập nhạc"
             android:textColor="@color/text_main" />
     </LinearLayout>
@@ -111,23 +117,29 @@
             android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDlWhisper"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="48dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:text="Tải model chép lời"
                 android:textColor="@color/text_main"
                 android:textSize="13sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnDlMdx"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="48dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:text="Tải model tách beat"
                 android:textColor="@color/text_main"
                 android:textSize="13sp" />
@@ -158,14 +170,20 @@
                 android:layout_weight="1"
                 android:text="Đang xử lý..." />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnJobCancel"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_btn_dark"
+                android:minHeight="40dp"
+                android:paddingStart="14dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="6dp"
                 android:text="Huỷ"
-                android:textColor="@color/error_red"
-                android:textSize="12sp" />
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <ProgressBar
@@ -176,6 +194,50 @@
             android:layout_marginTop="8dp"
             android:max="100"
             android:progressDrawable="@drawable/progress_gradient" />
+    </LinearLayout>
+
+    <!-- Thẻ job LỖI gần nhất (v1.0.1): hiện khi không có job đang chạy —
+         lỗi phải thấy ngay ở Thư viện, kèm nội dung lỗi đầy đủ + Chạy tiếp -->
+    <LinearLayout
+        android:id="@+id/cardJobError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_card_error"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvJobErrorTitle"
+            style="@style/KmTextBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠ Tác vụ bị lỗi"
+            android:textColor="@color/error_red"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvJobErrorText"
+            style="@style/KmTextSub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text=""
+            android:textColor="@color/error_red" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnJobResume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_gradient_btn"
+            android:minHeight="44dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="Chạy tiếp"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -232,11 +294,16 @@
             android:text="Bài hát trong máy"
             android:textSize="17sp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnScanMedia"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_btn_dark"
+            android:minHeight="44dp"
+            android:paddingStart="14dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="8dp"
             android:text="Quét nhạc"
             android:textColor="@color/accent_pink"
             android:textSize="13sp" />

@@ -225,3 +225,72 @@ thư viện, tải về đối chiếu) — toàn bộ cây Kotlin biên dịch 
 58 file. Kotlin **5.695 dòng** (core 817 · data 512 · audio 1.052 ·
 download 284 · service 695 · ui 2.306 · KaraokeApp 29). XML (layout +
 values + manifest) **1.969 dòng**. Còn lại: Gradle cấu hình, docs, README.
+
+## 8. v1.0.1 (versionCode 2) — bản vá theo verdict máy thật v1.0.0
+
+**Bệnh gốc (verdict 07/11/2026):** user bấm "Tự làm trọn gói" trước khi
+model MDX tải xong → hàng đợi tuần tự chạy tới chặng tách beat lúc model
+chưa có → `ensureBeat` ném lỗi ở đúng mốc 18%; màn Thư viện không hiện lỗi
+(`refreshJobs` chỉ hiện job active, thẻ dự án in nhãn tiến độ cũ "đã nạp
+bài — 18%" + nút Huỷ) nên user tưởng job còn chạy, đợi oan ~1 giờ; chỉ vào
+Studio mới thấy "bị lỗi" + Chạy tiếp. Kèm lỗi hiển thị trên Xiaomi: MỌI nút
+bị hồng hoá + cắt chân chữ, nút "Quét nhạc" tàng hình.
+
+**Đã sửa — 3 nhóm:**
+
+1. **Pipeline tự bảo đảm model** (`service/Pipeline.kt`): thêm
+   `downloadModelStage()` — `ensureBeat` mode "ai" khi `!mdxReady` thì TỰ
+   TẢI MDX ngay trong chặng (tiến độ tải ánh xạ vào nửa đầu khoảng % của
+   chặng, nhãn "đang tải model tách beat AI"); `ensureLyrics` tương tự với
+   WHISPER_FILES (nhãn "đang tải model chép lời AI", ánh xạ [10%→35%] của
+   chặng, các mốc sau tịnh tiến theo, % đơn điệu tăng). Lỗi tải ném NGUYÊN
+   VĂN của `ModelManager` (mạng/size/sha256); vẫn tôn trọng Huỷ qua
+   JobStore như các chặng khác. Model đã có sẵn -> hành vi y như cũ.
+   Cập nhật 2 dòng chữ hướng dẫn trong `activity_add_song.xml` cho khớp
+   hành vi mới (không còn bắt user tải model trước).
+2. **Thư viện hiện lỗi thật** (`data/JobBanner.kt` MỚI + `ui/MainActivity.kt`
+   + `activity_main.xml` + drawable mới `bg_card_error.xml`): logic chọn
+   banner tách thuần thành `JobBanner.pick()` với 3 trạng thái
+   Active/Failed/None — không có job active mà job kết thúc gần nhất là
+   error/interrupted (và chưa có job done mới hơn nó) thì hiện THẺ LỖI đỏ:
+   nhãn job + tên bài + nội dung lỗi ĐẦY ĐỦ + nút "Chạy tiếp"
+   (`JobService.resume`); resume hoặc có job active mới là thẻ tự ẩn.
+   Dòng tóm tắt trên thẻ dự án dùng `JobBanner.projectLineJob()` (job mới
+   nhất của dự án): error -> "bị lỗi: <error>" đỏ, interrupted -> "bị gián
+   đoạn" đỏ, done/huỷ -> ẩn (hết cảnh in nhãn tiến độ cũ của job đã chết).
+   Nút HUỶ trên thẻ job (Thư viện + Studio + hàng đợi Xuất): chữ TRẮNG đậm.
+3. **Layout cắt chữ — sửa tận gốc**: theme `Theme.MaterialComponents` +
+   `colorPrimary` hồng khiến mọi `<Button>` phình thành MaterialButton:
+   bị tint hồng đè lên background tự chế (nút "Quét nhạc" chữ hồng trên nền
+   hồng = tàng hình; nút HUỶ đỏ trên hồng = nhoè) và inset mặc định của
+   MaterialButton bóp khung chữ trong chiều cao cố định 36–52dp -> cắt
+   chân chữ tiếng Việt. Sửa: đổi TOÀN BỘ 39 nút ở 7 layout sang
+   `androidx.appcompat.widget.AppCompatButton` (tôn trọng background 100%,
+   không tint, không inset lạ); chiều cao cố định -> `wrap_content` +
+   `minHeight` (44–56dp tuỳ nút) + padding dọc tường minh 5–10dp để nút tự
+   giãn theo cỡ chữ hệ thống. Hàng nút tua ở Studio hết tràn ngang:
+   nút −5s/+5s cố định 56dp, đồng hồ `maxLines=1` + ellipsize, nút GẮN NHỊP
+   giảm padding ngang 18->12dp + chữ 14sp.
+
+**Kiểm chứng v1.0.1 (môi trường VM này, harness dựng lại tại
+`~/workspace/karaoke-android-verify/` — harness gốc của v1.0.0 đã mất):**
+- aapt2 compile + link toàn bộ res (gồm 7 layout đã sửa + drawable mới)
+  với android.jar 34 + res của AAR thật: SẠCH; R.java có đủ 4 id mới
+  (`cardJobError`, `tvJobErrorTitle`, `tvJobErrorText`, `btnJobResume`).
+  (Bản sao scratch cho link phải đổi tạm parent theme sang AppCompat +
+  `mediaProcessing`->`mediaPlayback` vì VM chỉ có SDK 34 — cây thật giữ
+  nguyên, CI SDK 35 build như v1.0.0.)
+- Biên dịch TOÀN CÂY Kotlin bằng kotlinc **2.0.21** (đúng bản CI) với
+  JAR/AAR THẬT của đúng từng phiên bản (appcompat 1.7.0, core 1.15.0,
+  recyclerview 1.3.2, material 1.12.0, ffmpeg-kit-full 8.1.9,
+  youtubedl-android 0.18.1, onnxruntime-android 1.31.1, sherpa-onnx
+  static 2.0.1 — file tải về đúng 38.577.050 byte như chuẩn): **0 lỗi**.
+- Test hành vi core (viết lại đúng 22 ca đã kê ở mục 5): **22/22 PASS**.
+- Test kịch bản lỗi cho phần mới (`JobBanner`): **15/15 PASS** — gồm:
+  nhiều job lỗi chọn job mới nhất; lỗi cũ + job active mới -> hiện active;
+  lỗi + job done mới hơn -> ẩn thẻ; resume (queued) -> thẻ lỗi biến mất,
+  chuyển Active; projectLineJob đủ ca active/error/interrupted/done/
+  canceled; và tái hiện đúng ca bệnh v1.0.0 (pipeline lỗi ở 18%).
+- Chưa kiểm được ở đây (chờ CI + máy thật): giao diện nút sau khi đổi
+  AppCompatButton trên HyperOS (hết hồng hoá/cắt chữ phải xác nhận bằng
+  mắt trên máy user); pipeline tự tải model chạy trọn vòng trên máy thật.
