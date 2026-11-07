@@ -67,6 +67,17 @@ android {
         // youtubedl-android đóng Python dạng .so nén — giữ nguyên cách đóng gói của thư viện.
         jniLibs {
             useLegacyPackaging = true
+            // CI run #1 đỏ ở :app:mergeReleaseNativeLibs: AAR sherpa static-link vẫn kèm
+            // libonnxruntime.so (thấy ở x86) -> trùng với onnxruntime-android 1.31.1.
+            // App chỉ ship arm64-v8a; riêng arm64 bản sherpa KHÔNG kèm file này (đã soi AAR)
+            // nên trên máy thật chỉ có bản Microsoft chạy — pickFirst ở các ABI phụ chỉ để
+            // qua bước merge, chúng bị abiFilters cắt khỏi APK.
+            pickFirsts += [
+                'lib/arm64-v8a/libonnxruntime.so',
+                'lib/armeabi-v7a/libonnxruntime.so',
+                'lib/x86/libonnxruntime.so',
+                'lib/x86_64/libonnxruntime.so'
+            ]
         }
     }
 }
